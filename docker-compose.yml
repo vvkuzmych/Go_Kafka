@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  producer:
+    build:
+      context: ./producer  # Make sure the Dockerfile is correct
+    container_name: producer
+    networks:
+      - mynetwork
+    depends_on:
+      - kafka  # Ensure Kafka is up before starting producer
+
+  consumer:
+    build:
+      context: ./consumer  # Make sure the Dockerfile is correct
+    container_name: consumer
+    networks:
+      - mynetwork
+    depends_on:
+      - kafka  # Ensure Kafka is up before starting consumer
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    environment:
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9093,PLAINTEXT_INTERNAL://kafka:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093,PLAINTEXT_INTERNAL://0.0.0.0:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT_INTERNAL
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    networks:
+      - mynetwork
+    ports:
+      - "9093:9093"  # Expose for external connections
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    networks:
+      - mynetwork
+    ports:
+      - "2181:2181"  # Expose Zookeeper port
+
+networks:
+  mynetwork:
+    driver: bridge  # Ensuring we are using a bridge network

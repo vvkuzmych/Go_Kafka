@@ -1,4 +1,4 @@
-module Go_Kafka
+module consumer
 
 go 1.23
 

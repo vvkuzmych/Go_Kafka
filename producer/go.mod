@@ -1,4 +1,4 @@
-module Go_Kafka
+module producer
 
 go 1.23
 
