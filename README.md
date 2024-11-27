@@ -35,3 +35,9 @@ If building was successful then run `docker-compose up`
 
 6. Go to Docker and you will see the results of running images. If smth. is not running, try to do it manually in Docker Desktop. 
 If all images are running, you should look at logs and see messages that were sent and received. 
+
+7. In Postman you can check messages: method POST wit url `http://localhost:8080/send?message=How+are+you?` and will get in logs consumer:
+    `consumer | Received: How are you?`
+
+8. using curl: `curl -X POST "http://localhost:8080/send?message=What+is+the+route?"`
+    You should get `consumer | Received: What is the route?`
