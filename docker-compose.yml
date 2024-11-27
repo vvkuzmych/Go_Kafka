@@ -9,6 +9,8 @@ services:
       - mynetwork
     depends_on:
       - kafka  # Ensure Kafka is up before starting producer
+    ports:
+      - "8080:8080"
 
   consumer:
     build:

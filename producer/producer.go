@@ -1,52 +1,63 @@
-// producer.go
-
 package main
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"net/http"
 
 	"github.com/segmentio/kafka-go"
 )
 
-func main() {
-	// Kafka broker address (from docker-compose.yml)
-	broker := "kafka:9092"
+var writer *kafka.Writer
 
-	// Create a Kafka writer (producer)
-	writer := kafka.Writer{
+func initKafkaWriter(broker, topic string) *kafka.Writer {
+	return &kafka.Writer{
 		Addr:     kafka.TCP(broker),
-		Topic:    "test-topic",        // Kafka topic
-		Balancer: &kafka.LeastBytes{}, // Balance messages across partitions
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
+	}
+}
+
+func sendMessageToKafka(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
-	defer func(writer *kafka.Writer) {
-		err := writer.Close()
-		if err != nil {
-			return
-		}
-	}(&writer)
+	message := r.URL.Query().Get("message")
+	if message == "" {
+		http.Error(w, "Message parameter is required", http.StatusBadRequest)
+		return
+	}
 
-	for {
-		// Create a message to send
-		message := "Hello from Go Producer"
+	err := writer.WriteMessages(
+		context.Background(),
+		kafka.Message{
+			Value: []byte(message),
+		},
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to send message: %v", err), http.StatusInternalServerError)
+		log.Printf("Error writing message: %v", err)
+		return
+	}
 
-		// Send the message
-		err := writer.WriteMessages(
-			context.Background(),
-			kafka.Message{
-				Value: []byte(message),
-			},
-		)
-		if err != nil {
-			log.Printf("Error writing message: %v", err)
-		} else {
-			fmt.Printf("Sent: %s\n", message)
-		}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Message sent: %s", message)
+}
 
-		// Sleep for 1 second before sending the next message
-		time.Sleep(1 * time.Second)
+func main() {
+	broker := "kafka:9092"
+	topic := "test-topic"
+
+	writer = initKafkaWriter(broker, topic)
+	defer writer.Close()
+
+	http.HandleFunc("/send", sendMessageToKafka)
+
+	fmt.Println("Server is running on :8080...")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }
