@@ -26,35 +26,6 @@ func initKafkaWriter(broker, topic string) KafkaWriter {
 	}
 }
 
-// sendMessageToKafka now accepts a KafkaWriter for better testability
-//func sendMessageToKafka(w http.ResponseWriter, r *http.Request, writer KafkaWriter) {
-//	if r.Method != http.MethodPost {
-//		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-//		return
-//	}
-//
-//	message := r.URL.Query().Get("message")
-//	if message == "" {
-//		http.Error(w, "Message parameter is required", http.StatusBadRequest)
-//		return
-//	}
-//
-//	err := writer.WriteMessages(
-//		context.Background(),
-//		kafka.Message{
-//			Value: []byte(message),
-//		},
-//	)
-//	if err != nil {
-//		http.Error(w, fmt.Sprintf("Failed to send message: %v", err), http.StatusInternalServerError)
-//		log.Printf("Error writing message: %v", err)
-//		return
-//	}
-//
-//	w.WriteHeader(http.StatusOK)
-//	fmt.Fprintf(w, "Message sent: %s", message)
-//}
-
 func sendMessageToKafka(w http.ResponseWriter, r *http.Request, writer KafkaWriter) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
